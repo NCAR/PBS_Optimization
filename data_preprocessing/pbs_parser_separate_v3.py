@@ -173,7 +173,7 @@ def handle_non_numerical_data(df):
 			df[column] = list(map(convert_to_int, df[column]))
 	return df
 
-def parsing_accounting_file(accounting_file, csv_dir, statFileWriter):
+def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 	# Conduct extracting features from each job record
 	record_id = -1
 	file_name = accounting_file.split('/')[-1]
@@ -278,7 +278,7 @@ def parsing_accounting_file(accounting_file, csv_dir, statFileWriter):
 							keynames.add(key)
 
 					doc.append(updated_dict)
-		outputFileLocation = os.path.join(csv_dir, file_name +'.csv')
+		outputFileLocation = os.path.join(csv_output, file_name +'.csv')
 		outputFile = open(outputFileLocation, 'w')
 		output_writer = csv.DictWriter(outputFile, fieldnames = list(keynames))
 		output_writer.writeheader()
@@ -321,7 +321,7 @@ def main():
 	for csv_file in all_csv_files:
 		try:
 			cur_df = pd.read_csv(csv_file)
-			dfs.append(cur_df, sort=True)
+			dfs.append(cur_df)
 		except:
 			#print ("The current file does not have any E records")
 			pass
