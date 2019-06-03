@@ -15,8 +15,8 @@ import collections
 #		Within this directory, there should only be accounting logs
 
 
-csv_output = '../csv_output'
-output_full = '../full_output'
+csv_output = '../csv_output/'
+output_full = '../full_output/'
 
 #  Create new directory
 def MakeDirectory (dirname):
@@ -133,21 +133,37 @@ def parseSelect(v):
 		except:
 			numCopy = 1
 			start = 0
-
+		
 		for e in range (start, len(element), 1):
 			comp = element[e].split("=")
+			if (('mem' in comp[0]) or ('vmem' in comp[0])):
+				comp[1] = comp[1].lower()
+				if ('kb' in comp[1] or 'k' in comp[1]):
+					comp[1] = float(comp[1].replace('kb','').replace('k', '')) * 1000.0
+				elif ('gb' in comp[1] or 'g' in comp[1]):
+					comp[1] = float(comp[1].replace('gb','').replace('g','')) * 1e9
+				elif ('mb' in comp[1] or 'm' in comp[1]):
+					comp[1] = float(comp[1].replace('mb','').replace('m','')) * 1e6
+				elif ('tb' in comp[1] or 't' in comp[1]):
+					comp[1] = float(comp[1].replace('tb','').replace('t','')) * 1e12
+				elif ('b' in comp[1]):
+					comp[1] = float(comp[1].replace('b', ''))
+				else:
+					comp[1] = float(comp[1])
+			#print ("Select feature ", e, comp[0], type(comp[1]))
 			if not (comp[0] in select_features):
 				try :
-					select_features[comp[0]+'_select'] = numCopy * int(comp[1])
+					select_features[comp[0]+'_select'] = numCopy * float(comp[1])
 				except:
 					select_features[comp[0]+'_select']  = comp[1]
 
 			else:
 				try:
-					select_features[comp[0]+'_select'] += numCopy * int(comp[1])
+					select_features[comp[0]+'_select'] += numCopy * float(comp[1])
 				except:
 					select_features[comp[0] + '_select'] += comp[1]
-
+			if (type(select_features[comp[0] + '_select']) == str): 
+				print ("Select feature ", e, comp[0], type(comp[1]))
 		if (len(select_features) == 0):
 			select_features['chunk_select'] = v
 
@@ -173,7 +189,7 @@ def handle_non_numerical_data(df):
 			df[column] = list(map(convert_to_int, df[column]))
 	return df
 
-def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
+def parsing_accounting_file(accounting_file, csv_dir, statFileWriter):
 	# Conduct extracting features from each job record
 	record_id = -1
 	file_name = accounting_file.split('/')[-1]
@@ -205,8 +221,8 @@ def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 
 				# Ignore jobs with specified Resource_List.mem or Resource_List.pmem
 				# since not all users specify this information
-				elif (('Resource_List.mem' in rec.keys()) or ('Resource_List.pmem' in rec.keys())):
-					pass
+				#elif (('Resource_List.mem' in rec.keys()) or ('Resource_List.pmem' in rec.keys())):
+				#	pass
 
 				#Ignore any reserved jobs
 				elif (any(l.startswith('resv') for l in rec.keys())):
@@ -214,12 +230,12 @@ def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 
 				# Submitted jobs without specifying account name, IGNORE
 				# since it is old data
-				elif not ('account' in rec.keys()):
-					pass
+				#elif not ('account' in rec.keys()):
+				#	pass
 				# Ignore other features (i.e. rsv, reserved ID)
-				elif ((len(rec.keys()) != 28) and ('Resource_List.mpiprocs' in rec.keys())
-							and ('account' in rec.keys())):
-					pass
+				#elif ((len(rec.keys()) != 28) and ('Resource_List.mpiprocs' in rec.keys())
+				#			and ('account' in rec.keys())):
+				#	pass
 
 				else:
 					updated_dict = {}
@@ -257,10 +273,18 @@ def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 
 						# Remove kb to make the field numeric for mem and vmem
 						elif ('mem' in key or  'vmem' in key):
-							if ('kb' in rec[key]):
-								v = rec[key].replace('kb', '')
-								updated_dict[key] = v
-								keynames.add(key)
+							if ('kb' in rec[key] or 'k' in rec[key]):
+								v = float(rec[key].replace('kb', '').replace('k','')) * 1000.0
+							elif ('gb' in rec[key] or 'g' in rec[key]):
+								v = float(rec[key].replace('gb', '').replace('g',''))* 1e9
+							elif ('mb' in rec[key] or 'm' in rec[key]):
+								v = float(rec[key].replace('mb','').replace('m','')) * 1e6
+							elif ('tb' in rec[key] or 't' in rec[key]):
+								v = float(rec[key].replace('tb','').replace('t','')) * 1e12
+							elif ('b' in rec[key]):
+								v = float(rec[key].replace('b', ''))
+							updated_dict[key] = float(v)
+							keynames.add(key)
 
 						# Number of cores and nodes for the select statement
 						elif (key == 'Resource_List.select'):
@@ -290,7 +314,7 @@ def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 		#Final edit (fill in 0 for empty cells)
 		try:
 			df = pd.read_csv(outputFileLocation)
-			df.fillna(0, inplace=True)
+			df.fillna(0.0, inplace=True)
 			df.to_csv(outputFileLocation, index=False)
 		except:
 			print("No E record for " + file_name)
@@ -301,13 +325,14 @@ def main():
 	accountingFolderLocation = argv[1]
 
 	MakeDirectory(csv_output)
+	MakeDirectory(output_full)
 	print (argv[1].split('/')[-2])
 	read_files = glob.glob(accountingFolderLocation + "/*")
 	read_files.sort()
 	statFileLoc = os.path.join(os.getcwd(),  'stats_distr.csv')
 	statFile = open(statFileLoc, 'w')
 	statFileWriter = csv.writer(statFile)
-
+	print ("All files", read_files)
 	## Parsing accounting file for each log
 	for file in read_files:
 		print ("Current File is ")
@@ -318,17 +343,19 @@ def main():
 	# Combining separate CSVs (for each day) into one CSV for the month
 	all_csv_files = glob.glob(csv_output + "/*")
 	dfs = []
+	print ("All CSV files are", all_csv_files)
+	print ("Current dir", os.getcwd())
 	for csv_file in all_csv_files:
 		try:
 			cur_df = pd.read_csv(csv_file)
 			dfs.append(cur_df)
 		except:
-			#print ("The current file does not have any E records")
-			pass
-
-	df_combined = pd.concat(dfs, axis = 0)
+			print ("The current file does not have any E records")
+			#pass
+	print ("Len dfs", len(dfs))
+	df_combined = pd.concat(dfs, ignore_index=True, axis = 0)
 	print (df_combined.columns)
-	df_combined.fillna(0, inplace=True)
+	df_combined.fillna(0.0, inplace=True)
 	df_combined.to_csv(output_full + argv[1].split('/')[-2] +'.csv', index=False)
 	print ("Completed Successfully")
 if __name__ == "__main__":
