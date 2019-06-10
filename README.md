@@ -5,9 +5,9 @@ This repository implements data preprocessing, machine learning models to optimi
 
 # Requirements
 
-Python 3.6.2
-Numpy
-Pandas
+Python 3.6.2 <br />
+Numpy <br />
+Pandas <br />
 
 
 # Usage
