@@ -28,13 +28,13 @@ python3 process_data.py
 
 To generate single feature plots, follow the commands
 ```
-python3 create_feature plots.py ABC
+python3 create_feature_plots.py ABC
 ```
 where ABC stands for the features (i.e. queue, resources_used.walltime, etc.)
 
-To generate multi-feautre plots, follow the commands
+To generate multi-feature plots, follow the commands
  ```
-python3 create_feature plots.py ABCandDEF
+python3 create_multi-index_feature_plots.py ABCandDEF
 ```
 where ABC and DEF stand for the two different features (i.e. queue, resources_used.walltime, etc.)
 
