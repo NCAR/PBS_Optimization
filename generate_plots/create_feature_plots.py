@@ -15,7 +15,7 @@ from sys import argv
 #   1. Feature to be plotted (i.e. queue, month_week, etc.)
 csv_dir = './csv_output/'
 #full_loc = '../updated_data/'
-full_loc = '../Apr_raw/'
+full_loc = '../full/'
 
 #  Create new directory
 def MakeDirectory (dirname):
@@ -31,6 +31,10 @@ def generate_pie_plots(plot_loc, df, field_name, custom_labels):
         group_by_field = bins
     else:
         group_by_field = field_name
+    if (custom_labels == []):
+        for name,_ in df.groupby(group_by_field):
+            custom_labels.append(name)
+
     for name,group in df.groupby(group_by_field):
         total_users = int(len(group))
         #print ("TOtal users", len(group))
@@ -153,12 +157,16 @@ def main():
     width = 0.35
     print("Generate stacked column plot")
     for i in range (len(plot_list)):
-        plt.bar(ind, plot_list[i], width)
-
+        if (i == 0):
+            plt.bar(ind, plot_list[i], width)
+            cumulative = np.array(plot_list[i])
+        else:
+            plt.bar(ind,plot_list[i], width, bottom=cumulative)
+            cumulative = cumulative + np.array(plot_list[i])
     plt.ylabel('Number of jobs')
     plt.xlabel("Period of time")
     plt.xticks(ind, labels=xlabels)
-    plt.tick_params(labelsize = 5)
+    plt.tick_params(labelsize = 7)
     plt.legend(legends)
     plt.savefig(plot_directory + '/overall_result.pdf', dpi=300, bbox_inches='tight')
     plt.close()

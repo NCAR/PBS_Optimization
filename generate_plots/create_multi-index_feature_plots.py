@@ -74,21 +74,31 @@ def generate_contribution_pie_plots(plot_loc, df, field_name):
         within_7h = group[(group['user_mispred'] > 3.0) & (group['user_mispred'] <= 7.0)].count()[0]
         more_than_7h = group[(group['user_mispred'] > 7.0)].count()[0]
         under_predh = group[(group['user_mispred'] < 0.0)].count()[0]
+        all_values = list([within_15_mins, within_1h, within_3h, within_7h, more_than_7h, under_predh])
 
         print('BY order', within_15_mins, within_1h, within_3h, within_7h, more_than_7h,
               under_predh)
-        time_breakdown[user_name] = list([ within_15_mins, within_1h, within_3h, within_7h, more_than_7h,
-              under_predh])
+        if not (user_name in time_breakdown):
+             
+             time_breakdown[user_name] = [all_values]
+        else:
+             time_breakdown[user_name].append(all_values)
+             #time_breakdown[user_name] 
         counter += 1
 
         if not (group_name in acc_user):
             empty = []
-            empty.append(user_name)
+            first_dict = {}
+            first_dict[user_name] = all_values
+            empty.append(first_dict)
+            #empty.append(user_name)
             acc_user[group_name] = empty
             acc_usr_job_counts[group_name] = len(group)
         else:
-
-            acc_user[group_name].append(user_name)
+            first_dict = {}
+            first_dict[user_name] = all_values
+            
+            acc_user[group_name].append(first_dict)
             acc_usr_job_counts[group_name] += len(group)
     print ("Acc user", acc_user)
 
@@ -117,9 +127,11 @@ def generate_contribution_pie_plots(plot_loc, df, field_name):
 
     plt.savefig(plot_loc + field_name[1] + ' Contribution.png', bbox_inches="tight", dpi=300)
     print ("Completed pie plot")
-
+    acc_counter = 0
+    # 
     ### Plot contribution by jobs
     for account in acc_user.keys():
+        print ("Account (outer filter)", account, acc_user[account])
         usr_name =[]
         within_15 = []
         within_1 = []
@@ -129,16 +141,21 @@ def generate_contribution_pie_plots(plot_loc, df, field_name):
         under_pred = []
         saved_dir = plot_loc + str(account)
         MakeDirectory(saved_dir)
+        
         for usr in acc_user[account]:
-            usr_name.append(usr)
-            #usr_vals.append(acc_usr_job_counts[usr])
-            within_15.append(time_breakdown[usr][0])
-            within_1.append(time_breakdown[usr][1])
-            within_3.append(time_breakdown[usr][2])
-            within_7.append(time_breakdown[usr][3])
-            more_than_7.append(time_breakdown[usr][4])
-            under_pred.append(time_breakdown[usr][5])
+            for k in usr.keys():
 
+                print ("Usr", k)
+                usr_name.append(k)
+
+                within_15.append(usr[k][0])
+                within_1.append(usr[k][1])
+                within_3.append(usr[k][2])
+                within_7.append(usr[k][3])
+                more_than_7.append(usr[k][4])
+                under_pred.append(usr[k][5])
+                if (k == 'dmattern'):
+                    print(usr[k])
         plot_list = [within_15,within_1, within_3, within_7, more_than_7, under_pred]
         legends = list(['0-15mins', '15 mins-1h', '1h-3h', '3h-7h', '>7h', 'underpred'])
         ind_val = 0
@@ -148,26 +165,34 @@ def generate_contribution_pie_plots(plot_loc, df, field_name):
 
         plt.figure()
         width = 0.35
-        print ("Group", account, usr_name)
+        print ("Group", account, usr_name, plot_list)
         print("Generate stacked column plot")
+        cumulative = None
         for index in range(len(plot_list)):
             try:
-                plt.bar(ind, plot_list[index], width)
+                if (index == 0):	
+                     print ('Value to plot at level ', index, ':', plot_list[index]) 
+                     plt.bar(ind, plot_list[index], width)
+                     cumulative = np.array(plot_list[index])
+                else:
+                     new_p = plt.bar(ind,plot_list[index], width, bottom=cumulative)
+                     cumulative = cumulative + np.array(plot_list[index])
             except:
                 print ("Failure")
                 print ("Shape test", len(plot_list[index]), len(ind), index)
                 print ("Further test", plot_list[index], ind)
         print ("\n")
-        plt.ylabel('Number of jobs')
-        plt.xlabel("Users ")
-        plt.title('Total number of ' + str(len(usr_name)) + ' users (Total considered ' + str(acc_usr_job_counts[account]) + ' jobs)')
+        plt.ylabel('Number of jobs (in log scale)')
+        plt.xlabel(str(field_name[0]))
+        plt.title('Total number of ' + str(len(usr_name)) + ' ' + field_name[0] + ' (Total considered ' + str(acc_usr_job_counts[account]) + ' jobs)')
         plt.xticks(ind, labels=usr_name)
-        plt.tick_params(labelsize=3)
+        plt.tick_params(labelsize=5)
         plt.yscale('log')
         plt.legend(legends)
         plt.savefig(saved_dir + '/stacked_column_summary.pdf', dpi=300, bbox_inches='tight')
         plt.close()
-\
+        acc_counter += 1
+
 def get_week_of_month(year, month, day):
     x = np.array(calendar.monthcalendar(year, month))
     week_of_month = np.where(x==day)[0][0] + 1
