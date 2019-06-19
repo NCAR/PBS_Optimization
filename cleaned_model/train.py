@@ -232,6 +232,11 @@ def main():
         res_t = train_resources[idx_t]
         res_eval = train_resources[idx_te]
         input_size = x_t.shape[1]
+
+        print("--------------- Finish loading data ------------------")
+        print('Initializing Variables')
+        MakeDirectory(ckpt_dir)
+
         if (argv[1] == 'cnn'):
             training_model = model.ConvNet(output_size,device).to(device)
         elif (argv[1] == 'rnn'):
@@ -241,9 +246,7 @@ def main():
 
         optimizer = torch.optim.Adam(training_model.parameters(), lr = learning_rate)
 
-        print("--------------- Finish loading data ------------------")
-        print('Initializing Variables')
-        MakeDirectory(ckpt_dir)
+
          
         print("Start epoch training")
         train_model(x_t, y_t, res_t, x_eval, y_eval, res_eval, training_model, optimizer, device)
