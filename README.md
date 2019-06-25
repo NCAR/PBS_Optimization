@@ -8,9 +8,9 @@ This repository implements data preprocessing, machine learning models to optimi
 Python 3.6.2 <br />
 Numpy <br />
 Pandas <br />
-pytorch 1.0.1 <br />
-scikit-learn 0.21.1 <br />
-tensorflow 1.13.1 <br />
+Pytorch 1.0.1 <br />
+Scikit-learn 0.21.1 <br />
+Tensorflow 1.13.1 <br />
 
 # Usage
 
@@ -51,3 +51,17 @@ Training default model proposed by "Machine Learning Predictions for Underestima
 ```
 python3 rf_xgboost.py 
 ``
+# Unsupervised Domain Adaptation (Unsupervised Domain Adaptation by Backpropagation)
+Implementation of the proposed domain adaptation model from "Unsupervised Domain Adaptation by Backpropagation" (Ganin, Lempitsky, 2015)
+
+```
+python3 train_transfer.py --batch_size=32 --num_epochs=200 --hidden_size=128 --ckpt=False --train_path='../training_small/' --ckpt_path='../best_dann_model/' --test_path='../testing_small/' --model_type='dann' --dropout=0.8 --device='cuda:0'
+```
+
+# Deep Adaptation Network (DAN)
+Implementation of the proposed domain adaptation model from "Learning Transferable Features with Deep Adaptation Networks" (Long, Cao, Wang, Jordan, 2015)
+```
+python3 train_transfer.py --batch_size=32 --num_epochs=200 --hidden_size=128 --ckpt=False --train_path='../training_small/' --ckpt_path='../best_dan_model/' --test_path='../testing_small/' --model_type='dan' --dropout=0.8 --device='cuda:0'
+```
+```
+
