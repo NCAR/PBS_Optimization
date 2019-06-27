@@ -29,7 +29,7 @@ python3 process_data.py
 ```
 
 # Data Analysis & Plotting
-Current list of supported plotting features:
+Current list of supported plotting features: <br />
 	Resource_List.walltime <br />
 	Resource_List.ncpus <br />
 	Resource_List.mpiprocs <br />
@@ -40,10 +40,10 @@ Current list of supported plotting features:
 	mispred_ratio <br />
 	mispred_ratio_walltime <br />
 	
-Current list of supported groupby_val features:
+Current list of supported groupby_val features: <br />
 	user <br />
 	account <br />
----
+
 To generate single feature plots, follow the commands
 ```
 python3 create_feature_plots.py ABC
@@ -61,22 +61,22 @@ To generate 2-dimensional plot analysis (by 2 features), follow the commands:
 python3 overall_plot.py --multi_dim_plot=True --multi_dim_x_feature= mispred_ratio, --multi_dim_y_feature='num_jobs' --num_top=10 --groupby_val='account' --data_path ='../apr_2019_full/'
 ```
 Argument parameters:
- --multi_dim_plot: whether to plot multi_dim or not, default: False
- --multi_dim_x_feature: features on x_axis, default: mispred_ratio
- --multi_dim_y_feature: features on y_axism defaultL num_jobs
- --num_top: top users by two 2 specified dimensions (multiplication), default: 0 (no filter)
- --groupby_val: data point representation (i.e. user/ account), default: user
- --data_path: location storing parsed accounting csv of interest
+ --multi_dim_plot: whether to plot multi_dim or not, default: False <br />
+ --multi_dim_x_feature: features on x_axis, default: mispred_ratio <br />
+ --multi_dim_y_feature: features on y_axism defaultL num_jobs <br />
+ --num_top: top users by two 2 specified dimensions (multiplication), default: 0 (no filter) <br />
+ --groupby_val: data point representation (i.e. user/ account), default: user <br />
+ --data_path: location storing parsed accounting csv of interest <br />
 
 To generate overall_plot, follow the commands:
 ```python
 python3 overall_plot.py --data_path='../apr_2019_full/' --groupby_val='user' --overall_distr_plot=True --overall_feature='user_mispred'
 ```
 Argument parameters:
-  --data_path: location storing parsed accounting csv of interest
-  --groupby_val: data point representation (i.e. user/ account), default: user
-  --overall_distr_plot: whether to plot overall distribution or not
-  --overall_feature: feature to plot by
+  --data_path: location storing parsed accounting csv of interest <br />
+  --groupby_val: data point representation (i.e. user/ account), default: user <br />
+  --overall_distr_plot: whether to plot overall distribution or not <br />
+  --overall_feature: feature to plot by <br />
 
 # Training State-of-the-art Model (Neural Network)
 To train either FeedForward Network (keyword: ff), Recurrent Neural Network (keyword: rnn), Convolutional Neural Network (keyword: cnn), or Residual Neural Network (keyword: resnet), please follow the example below. Example is for FeedForward network:
