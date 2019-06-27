@@ -9,14 +9,14 @@ import numpy as np
 from itertools import cycle, islice
 import glob
 import collections
-
+import shutil
+import re
 # Argument inputs are as follows:
 # 	1. Directory of accounting logs (exact directory without any further subdirectories)
 #		Within this directory, there should only be accounting logs
+#	2. output of concatenated csv
 
-
-csv_output = '../csv_output/'
-output_full = '../full_output/'
+output_full = argv[2]
 
 #  Create new directory
 def MakeDirectory (dirname):
@@ -189,55 +189,47 @@ def handle_non_numerical_data(df):
 			df[column] = list(map(convert_to_int, df[column]))
 	return df
 
-def parsing_accounting_file(accounting_file, csv_dir, statFileWriter):
+def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 	# Conduct extracting features from each job record
 	record_id = -1
 	file_name = accounting_file.split('/')[-1]
 	num_end_rec = 0
+	shared_queue =['shareex', 'share']
 	with open(accounting_file, "r") as infile:
 		data = infile.readlines()
 		doc = []
 		keynames = set()
+		line_count = 0
+		e_check = 0
 		# Actually building the dictionary
 		for entry in data:
-
-                        
                         # Focus only on E records
                         # L: PBS license stats
                         # Q: queued
                         # S: started
-                        # D:
 
                         # Only read E full records
-			if ((entry.split("/")[0].isdigit()) and (entry.split(";")[1] == "E") and not('[' in entry.split(';')[2].split('.')[0])):
-
+			if ((entry.split(';')[1] == 'E') and not (bool(re.search('\[[0-9]*\]', entry)))):
 				fields = entry.split(";")
 				message = ' '.join(fields[3:])
 				rec = parse_acct_record(message)
 
-				# Ignore jobs with Resource_list.inception field
-				if ('Resource_List.inception' in rec.keys()):
+				# Ignore share queues
+				if (rec['queue'] == 'shareex' or rec['queue'] == 'share'):
+					#print ("This is a pass", rec['queue'])
+					pass
+				
+				# Ignore reserved queues/ jobs
+				elif ((bool(re.search('(R|S)[0-9]*', rec['queue'])))):
 					pass
 
-				# Ignore jobs with specified Resource_List.mem or Resource_List.pmem
-				# since not all users specify this information
-				#elif (('Resource_List.mem' in rec.keys()) or ('Resource_List.pmem' in rec.keys())):
-				#	pass
-
-				#Ignore any reserved jobs
-				elif (any(l.startswith('resv') for l in rec.keys())):
+				#Ignore jobs running more than once
+				elif (rec['run_count'] != '1'):
 					pass
-
-				# Submitted jobs without specifying account name, IGNORE
-				# since it is old data
-				#elif not ('account' in rec.keys()):
-				#	pass
-				# Ignore other features (i.e. rsv, reserved ID)
-				#elif ((len(rec.keys()) != 28) and ('Resource_List.mpiprocs' in rec.keys())
-				#			and ('account' in rec.keys())):
-				#	pass
-
+				
 				else:
+				
+				#if(True):
 					updated_dict = {}
 					num_end_rec += 1
 					record_id = record_id + 1
@@ -302,7 +294,7 @@ def parsing_accounting_file(accounting_file, csv_dir, statFileWriter):
 							keynames.add(key)
 
 					doc.append(updated_dict)
-		outputFileLocation = os.path.join(csv_output, file_name +'.csv')
+		outputFileLocation = os.path.join(csv_output, file_name + '.csv')
 		outputFile = open(outputFileLocation, 'w')
 		output_writer = csv.DictWriter(outputFile, fieldnames = list(keynames))
 		output_writer.writeheader()
@@ -310,7 +302,9 @@ def parsing_accounting_file(accounting_file, csv_dir, statFileWriter):
 		statFileWriter.writerow([file_name, num_end_rec])
 		print("Parsing Completed")
 		outputFile.close()
-
+		print ("Number of E records", file_name, num_end_rec)
+		print ("Unfiltered E recs ", line_count)
+		
 		#Final edit (fill in 0 for empty cells)
 		try:
 			df = pd.read_csv(outputFileLocation)
@@ -323,11 +317,13 @@ def parsing_accounting_file(accounting_file, csv_dir, statFileWriter):
 
 def main():
 	accountingFolderLocation = argv[1]
-
+	csv_output = '../temp_csv/'
+	final_csv_name = argv[1].split('/')[-2]
 	MakeDirectory(csv_output)
 	MakeDirectory(output_full)
-	print (argv[1].split('/')[-2])
-	read_files = glob.glob(accountingFolderLocation + "/*")
+
+	print (final_csv_name)
+	read_files = glob.glob(accountingFolderLocation + "*")
 	read_files.sort()
 	statFileLoc = os.path.join(os.getcwd(),  'stats_distr.csv')
 	statFile = open(statFileLoc, 'w')
@@ -335,28 +331,26 @@ def main():
 	print ("All files", read_files)
 	## Parsing accounting file for each log
 	for file in read_files:
-		print ("Current File is ")
-		print (file)
+		print ("Current File is ", file)
 		parsing_accounting_file(file, csv_output,statFileWriter)
 		print ("\n")
 
 	# Combining separate CSVs (for each day) into one CSV for the month
-	all_csv_files = glob.glob(csv_output + "/*")
+	all_csv_files = glob.glob(csv_output + "*")
 	dfs = []
 	print ("All CSV files are", all_csv_files)
-	print ("Current dir", os.getcwd())
 	for csv_file in all_csv_files:
 		try:
 			cur_df = pd.read_csv(csv_file)
 			dfs.append(cur_df)
 		except:
 			print ("The current file does not have any E records")
-			#pass
-	print ("Len dfs", len(dfs))
+
 	df_combined = pd.concat(dfs, ignore_index=True, axis = 0)
 	print (df_combined.columns)
 	df_combined.fillna(0.0, inplace=True)
-	df_combined.to_csv(output_full + argv[1].split('/')[-2] +'.csv', index=False)
+	df_combined.to_csv(output_full + final_csv_name +'.csv', index=False)
+	shutil.rmtree(csv_output)
 	print ("Completed Successfully")
 if __name__ == "__main__":
 	main()
