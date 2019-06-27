@@ -57,27 +57,32 @@ def gen_multi_dim_plot(df, plot_loc,config):
 		
 		x_val.append(x)
 		y_val.append(y)
-		ratio.append(round(float(x*y), 2))
 		user_names.append(name)
+
+	normalized_y = ( y_val - np.amin(y_val)) / (np.amax(y_val) - np.amin(y_val))
+	normalized_x = ( x_val - np.amin(x_val)) / (np.amax(x_val) - np.amin(x_val))	
 	a=np.random.random(len(y_val))
+	ratio = normalized_y * normalized_x
 	
 	temp = np.array(ratio)
 	x_val = np.array(x_val)
 	y_val = np.array(y_val)
 	user_names = np.array(user_names)
+
 	if (config['num_top'] != 0):
 		n=config['num_top']
-		top_10_users = temp[np.argsort(temp)[-n:]]
 		index_top = np.argsort(temp)[-n:]
 		x_val = x_val[index_top]
 		y_val = y_val[index_top]
-		user_names = user_names[index_top] 
+		user_names = user_names[index_top]
+		ratio = ratio[index_top] 
+	
 	colors = cm.rainbow(np.linspace(0, 1, len(x_val)))	
 	fig, ax = plt.subplots()
 	for i in range (len(x_val)):
-		ax.scatter(x_val[i], y_val[i], c=colors[i], label=user_names[i])
+		ax.scatter(x_val[i], y_val[i], c=colors[i], label=user_names[i] + '(' + str(round(ratio[i],2)) + ')')
 	if (config['num_top'] != 0):
-		ax.legend(ncol=5,prop={'size': 5}, loc='best')
+		ax.legend(ncol=math.ceil(config['num_top']/ 20),prop={'size': 4}, loc='best')
 	title = config['multi_dim_y_feature'] + ' vs ' + config['multi_dim_x_feature'] + ' for ' + str(config['groupby_val'])
 	if (config['num_top'] != 0):
 		title += '(top ' + str(config['num_top']) + ' ' + str(config['groupby_val']) + ')'
@@ -155,7 +160,7 @@ def main():
         df['week_month'] = df['ctime'].apply(lambda x: get_week_of_month(datetime.fromtimestamp(x).year, datetime.fromtimestamp(x).month, datetime.fromtimestamp(x).day))
         df['time_day'] = df['ctime'].apply(lambda x: (datetime.fromtimestamp(x).hour))
         
-        df['mispred_ratio'] = ((df['Resource_List.walltime'] - df['resources_used.walltime']) / (df['Resource_List.walltime']))* 100.0
+        df['mispred_ratio'] = ((df['Resource_List.walltime'] - df['resources_used.walltime']) / (df['Resource_List.walltime']))
         df['mispred_ratio'] = df['mispred_ratio'].replace(np.inf, 0.0)
         df['mispred_ratio'] = df['mispred_ratio'].replace(-np.inf, 0.0)
         
