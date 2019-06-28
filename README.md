@@ -29,7 +29,7 @@ To split data ino different weeks, follow the commands
 ```
 python3 weekly_split.py pre_data_loc post_data_loc
 ```
-where **pre_data_loc** : directory containing pre-processed CSV data
+where **pre_data_loc** : directory containing pre-processed CSV data <br />
       **post_data_loc** : directory containing post-processed CSV data
 
 # Data Analysis & Plotting
@@ -38,35 +38,37 @@ The goal of the scripts in this section is to produce charts for visualization o
 ## Plot by single feature
 This script produces breakdown of users' misprediction in terms of different user_selected features. Follow the command to execute the script
 ```
-python3 create_feature_plots.py data_path feature
+python3 create_feature_plots.py **data_path** **feature**
 ```
 where
-	**data_path** directory containing CSV data 
+	**data_path** directory containing CSV data <br />
 	**feature** stands for the features (i.e. queue, resources_used.walltime, etc.)
 
 Successful scripts would produce 2 types of plots:
-	1. Pie plot: for individual period dissected by feature (i.e. Monday-> Friday if feature is day_week)
+	1. Pie plot: for individual period dissected by feature (i.e. Monday-> Friday if feature is day_week) <br />
 	2. Stacked column chart: for all of the periods dissected by feature 
+
 ## Plot by 2 features 
 This script extends the previous script to produce two-level feature filters. Currently, feature2 is supposed to be an outer filter and feature1 is an inner filter
  ```
-python3 create_multi-index_feature_plots.py feature1andfeature2
+python3 create_multi-index_feature_plots.py **feature1andfeature2**
 ```
 
 where **feature1** and **feature2** stand for the two different features (i.e. queue, resources_used.walltime, etc.)
 
 Successful scripts would produce 2 types of plots:
-	1. Pie plot: Contribution of each **feature2** with more than 2% of job volume
+	1. Pie plot: Contribution of each **feature2** with more than 2% of job volume <br />
 	2. Stacked column chart: for each **feature2** with components of **feature1**
-Example: feature1:user, feature2: account
+
+Example: feature1:user, feature2: account <br />
 The resulting pie plot is as follows:
-![Account Contribution](./account Contribution.png)
+![Account Contribution](./img/account Contribution.png)
 
 The example stacked column chart is as follows:
-![User breakdown](./NMMM0055.pdf)
+![User breakdown](./img/NMMM0055.pdf)
 
 
-Current list of supported plotting features: <br />
+**Current list of supported plotting features:** <br />
 	time_day <br />
 	week_month <br />
 	day_week <br />
@@ -98,7 +100,7 @@ Argument parameters:
   --**overall_distr_plot** whether to plot overall distribution or not <br />
   --**overall_feature** feature to plot by <br />
 
-Current list of supported plotting features: <br />
+**Current list of supported plotting features:** <br />
 	Resource_List.walltime <br />
 	resources_used.walltime <br />
 	resources_used.cput <br />
@@ -106,7 +108,7 @@ Current list of supported plotting features: <br />
 	mispred_ratio <br />
 	mispred_ratio_walltime <br />
 	
-Current list of supported groupby_val features: <br />
+**Current list of supported groupby_val features:** <br />
 	user <br />
 	account <br />
 # Training State-of-the-art Model (Neural Network)
