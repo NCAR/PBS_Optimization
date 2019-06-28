@@ -60,15 +60,7 @@ Successful scripts would produce 2 types of plots:
 	1. Pie plot: Contribution of each **feature2** with more than 2% of job volume <br />
 	2. Stacked column chart: for each **feature2** with components of **feature1**
 
-Example: feature1:user, feature2: account <br />
-The resulting pie plot is as follows:
-
-![Account Contribution](img/"account Contribution.png")
-
-The example stacked column chart is as follows:
-
-![usr](img/NMMM0055.pdf)
-
+(See example in img directory)
 
 **Current list of supported plotting features:** <br />
 	time_day <br />
