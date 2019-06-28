@@ -62,10 +62,10 @@ Successful scripts would produce 2 types of plots:
 
 Example: feature1:user, feature2: account <br />
 The resulting pie plot is as follows:
-![Account Contribution](./img/account Contribution.png)
+![Account Contribution](../img/account Contribution.png)
 
-The example stacked column chart is as follows:
-![User breakdown](./img/NMMM0055.pdf)
+The example stacked column chart is as follows: <br />
+![breakdown](../img/NMMM0055.pdf)
 
 
 **Current list of supported plotting features:** <br />
