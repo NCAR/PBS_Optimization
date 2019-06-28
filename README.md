@@ -38,7 +38,7 @@ The goal of the scripts in this section is to produce charts for visualization o
 ## Plot by single feature
 This script produces breakdown of users' misprediction in terms of different user_selected features. Follow the command to execute the script
 ```
-python3 create_feature_plots.py **data_path** **feature**
+python3 create_feature_plots.py data_path feature
 ```
 where
 	**data_path** directory containing CSV data <br />
@@ -51,7 +51,7 @@ Successful scripts would produce 2 types of plots:
 ## Plot by 2 features 
 This script extends the previous script to produce two-level feature filters. Currently, feature2 is supposed to be an outer filter and feature1 is an inner filter
  ```
-python3 create_multi-index_feature_plots.py **feature1andfeature2**
+python3 create_multi-index_feature_plots.py feature1andfeature2
 ```
 
 where **feature1** and **feature2** stand for the two different features (i.e. queue, resources_used.walltime, etc.)
@@ -62,10 +62,12 @@ Successful scripts would produce 2 types of plots:
 
 Example: feature1:user, feature2: account <br />
 The resulting pie plot is as follows:
-![Account Contribution](../img/account Contribution.png)
 
-The example stacked column chart is as follows: <br />
-![breakdown](../img/NMMM0055.pdf)
+![Account Contribution](img/account Contribution.png)
+
+The example stacked column chart is as follows:
+
+![usr](img/NMMM0055.pdf)
 
 
 **Current list of supported plotting features:** <br />
