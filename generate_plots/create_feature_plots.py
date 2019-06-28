@@ -11,11 +11,7 @@ import glob
 import math
 from sys import argv
 
-# Argument inputs are as follows:
-#   1. Feature to be plotted (i.e. queue, month_week, etc.)
-csv_dir = './csv_output/'
-#full_loc = '../updated_data/'
-full_loc = '../full/'
+full_loc = argv[1]
 
 #  Create new directory
 def MakeDirectory (dirname):
@@ -40,10 +36,10 @@ def generate_pie_plots(plot_loc, df, field_name, custom_labels):
         #print ("TOtal users", len(group))
         print ("Current", field_name, custom_labels[counter])
         within_15 = group[(group['user_mispred'] >= 0.0) & (group['user_mispred'] <0.25)].count()[0]
-        within_1h = group[(group['user_mispred'] > 0.25) & (group['user_mispred'] <=1.0)].count()[0]
-        within_3h = group[(group['user_mispred'] > 1.0) & (group['user_mispred'] <= 3.0)].count()[0]
-        within_7h = group[(group['user_mispred'] > 3.0) & (group['user_mispred'] <= 7.0)].count()[0]
-        more_than_7h = group[(group['user_mispred'] > 7.0)].count()[0]
+        within_1h = group[(group['user_mispred'] >= 0.25) & (group['user_mispred'] < 1.0)].count()[0]
+        within_3h = group[(group['user_mispred'] >= 1.0) & (group['user_mispred'] < 3.0)].count()[0]
+        within_7h = group[(group['user_mispred'] >= 3.0) & (group['user_mispred'] < 7.0)].count()[0]
+        more_than_7h = group[(group['user_mispred'] >= 7.0)].count()[0]
         under_pred = group[(group['user_mispred'] < 0.0)].count()[0]
 
         print('BY order', within_15, within_1h, within_3h, within_7h, more_than_7h, under_pred)
@@ -51,7 +47,7 @@ def generate_pie_plots(plot_loc, df, field_name, custom_labels):
         plt.figure()
         patches, _, percent = plt.pie(plot_values, startangle=90, autopct='%1.1f%%', pctdistance=1.22)
 
-        labels = list(['0-15min', '15min-1h', '1h-3h', '3h-7h', '>7h', 'underpred'])
+        labels = list(['0-15min', '15min-1h', '1h-3h', '3h-7h', '>=7h', 'underpred'])
         for i in range(len(labels)):
             labels[i] = labels[i] + '(' + percent[i].get_text() + ')'
         plt.legend(patches, labels, bbox_to_anchor=(1.2, 1.025), loc='upper left')
@@ -78,14 +74,14 @@ def generate_stacked_column_chart (df, field_name, labels, custom_labels, file):
     for name, group in df.groupby(group_by_field):
 
         print("Current", field_name, custom_labels[counter])
-        within_15min = group[(group['user_mispred'] >= 0.0) & (group['user_mispred'] <= 0.25)].count()[0]
-        within_1h = group[(group['user_mispred'] > 0.25) & (group['user_mispred'] <= 1.0)].count()[0]
-        within_3h = group[(group['user_mispred'] > 1.0) & (group['user_mispred'] <= 3.0)].count()[0]
-        within_7h = group[(group['user_mispred'] > 3.0) & (group['user_mispred'] <= 7.0)].count()[0]
-        more_than_7h = group[(group['user_mispred'] > 7.0)].count()[0]
+        within_15min = group[(group['user_mispred'] >= 0.0) & (group['user_mispred'] < 0.25)].count()[0]
+        within_1h = group[(group['user_mispred'] >= 0.25) & (group['user_mispred'] < 1.0)].count()[0]
+        within_3h = group[(group['user_mispred'] >= 1.0) & (group['user_mispred'] < 3.0)].count()[0]
+        within_7h = group[(group['user_mispred'] >= 3.0) & (group['user_mispred'] < 7.0)].count()[0]
+        more_than_7h = group[(group['user_mispred'] >= 7.0)].count()[0]
         under_predh = group[(group['user_mispred'] < 0.0)].count()[0]
 
-        print('BY order (15 mins,1h, 3h, 7h, >7h, underpred) \n', within_15min, within_1h, within_3h, within_7h, more_than_7h,
+        print('BY order (15 mins,1h, 3h, 7h, >=7h, underpred) \n', within_15min, within_1h, within_3h, within_7h, more_than_7h,
               under_predh)
         within_15.append(within_15min)
         within_1.append(within_1h)
@@ -110,7 +106,7 @@ def main():
     print("Before", all_files)
     all_files = sorted(all_files, key = lambda s: (s.split('/')[-1].split('_')[0], s.split('/')[-1].split('_')[1].split('.')[0]))
     print ("Sorted files", all_files)
-    feature = argv[1]
+    feature = argv[2]
     plot_directory = '../plot_column_' + feature + '/'
     MakeDirectory(plot_directory)
     within_15 = []
@@ -120,7 +116,7 @@ def main():
     more_than_7 = []
     under_pred = []
     xlabels = []
-    legends = list(['0-15min', '15min-1h', '1h-3h', '3h-7h', '>7h', 'underpred'])
+    legends = list(['0-15min', '15min-1h', '1h-3h', '3h-7h', '>=7h', 'underpred'])
     plot_list = [within_15, within_1, within_3, within_7, more_than_7, under_pred]
     print("Generate pie plot")
 
@@ -152,24 +148,24 @@ def main():
 
         print("\n")
 
-    ind = np.arange(len(xlabels))
-    plt.figure()
-    width = 0.35
-    print("Generate stacked column plot")
-    for i in range (len(plot_list)):
-        if (i == 0):
-            plt.bar(ind, plot_list[i], width)
-            cumulative = np.array(plot_list[i])
-        else:
-            plt.bar(ind,plot_list[i], width, bottom=cumulative)
-            cumulative = cumulative + np.array(plot_list[i])
-    plt.ylabel('Number of jobs')
-    plt.xlabel("Period of time")
-    plt.xticks(ind, labels=xlabels)
-    plt.tick_params(labelsize = 7)
-    plt.legend(legends)
-    plt.savefig(plot_directory + '/overall_result.pdf', dpi=300, bbox_inches='tight')
-    plt.close()
-    print ("Completed stacked column chart")
+        ind = np.arange(len(xlabels))
+        plt.figure()
+        width = 0.35
+        print("Generate stacked column plot")
+        for i in range (len(plot_list)):
+            if (i == 0):
+               plt.bar(ind, plot_list[i], width)
+               cumulative = np.array(plot_list[i])
+            else:
+               plt.bar(ind,plot_list[i], width, bottom=cumulative)
+               cumulative = cumulative + np.array(plot_list[i])
+        plt.ylabel('Number of jobs')
+        plt.xlabel("Period of time")
+        plt.xticks(ind, labels=xlabels)
+        plt.tick_params(labelsize = 7)
+        plt.legend(legends)
+        plt.savefig(plot_loc + '/overall_result.pdf', dpi=300, bbox_inches='tight')
+        plt.close()
+        print ("Completed stacked column chart")
 if __name__ == "__main__":
     main()
