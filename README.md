@@ -15,22 +15,38 @@ Tensorflow 1.13.1 <br />
 # Data Preprocessing
 
 ```
-python3 pbs_parser_seaprate_v3.py accounting
+python3 pbs_parser_seaprate_v3.py accounting outloc
 ```
  where
-	**accounting** is the location of directory with accounting logs (previous historical PBS data)
+	**accounting** : directory with accounting logs (previous historical PBS data) <br />
+	**outloc** : output directory with combined accounting logs (in csv format)
 
 To extract additional features from accounting logs, follow the commands
 
 ```
-python3 process_data.py
+python3 process_data.py inloc outloc
 ```
+ where
+	**inloc** : directory with combined accounting logs (from pbs parser step) <br />
+	**outloc** : output directory with added features 
+
+To filter suspicious jobs from data, follow the commands
+```
+python3 filter_data.py inloc outloc
+
+```
+ where
+	**inloc** : directory with combined accounting logs (from previous proccess_data step) <br />
+	**outloc** : output directory with filtered data 
+
 To split data ino different weeks, follow the commands
 ```
 python3 weekly_split.py pre_data_loc post_data_loc
 ```
 where **pre_data_loc** : directory containing pre-processed CSV data <br />
       **post_data_loc** : directory containing post-processed CSV data
+
+
 
 # Data Analysis & Plotting
 The goal of the scripts in this section is to produce charts for visualization of PBS accounting data. The analysis is done by calculating jobs' misprediction and dividing them into 6 bins (0-15 minutes, 15min-1h, 1h-3h, 3h-7h, >=7h, underprediction)
@@ -98,9 +114,9 @@ Argument parameters: <br/>
 	Resource_List.walltime <br />
 	resources_used.walltime <br />
 	resources_used.cput <br />
-	user_mispred <br />
-	mispred_ratio <br />
-	mispred_ratio_walltime <br />
+	user_mispred (user_predict running time - actual running time) <br />
+	mispred_ratio  (misprediction over user_predict running time) <br />
+	mispred_ratio_runtime (misprediction over actual running time) <br />
 	
 **Current list of supported groupby_val features:** <br />
 	user <br />

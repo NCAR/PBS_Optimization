@@ -136,10 +136,10 @@ def parseSelect(v):
 		
 		for e in range (start, len(element), 1):
 			comp = element[e].split("=")
-			if (('mem' in comp[0]) or ('vmem' in comp[0])):
+			if (('mem' in comp[0]) or ('vmem' in comp[0]) or ('pmem' in comp[0] or ('pvmem' in comp[0])):
 				comp[1] = comp[1].lower()
 				if ('kb' in comp[1] or 'k' in comp[1]):
-					comp[1] = float(comp[1].replace('kb','').replace('k', '')) * 1000.0
+					comp[1] = float(comp[1].replace('kb','').replace('k', '')) * 1e3
 				elif ('gb' in comp[1] or 'g' in comp[1]):
 					comp[1] = float(comp[1].replace('gb','').replace('g','')) * 1e9
 				elif ('mb' in comp[1] or 'm' in comp[1]):
@@ -150,6 +150,8 @@ def parseSelect(v):
 					comp[1] = float(comp[1].replace('b', ''))
 				else:
 					comp[1] = float(comp[1])
+				#if ('vmem' in comp[0]):
+					#print ("Test vmem value", comp[1])
 			#print ("Select feature ", e, comp[0], type(comp[1]))
 			if not (comp[0] in select_features):
 				try :
@@ -163,7 +165,8 @@ def parseSelect(v):
 				except:
 					select_features[comp[0] + '_select'] += comp[1]
 			if (type(select_features[comp[0] + '_select']) == str): 
-				print ("Select feature ", e, comp[0], type(comp[1]))
+				pass
+				#print ("Select feature ", e, comp[0], type(comp[1]))
 		if (len(select_features) == 0):
 			select_features['chunk_select'] = v
 
@@ -194,13 +197,10 @@ def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 	record_id = -1
 	file_name = accounting_file.split('/')[-1]
 	num_end_rec = 0
-	shared_queue =['shareex', 'share']
 	with open(accounting_file, "r") as infile:
 		data = infile.readlines()
 		doc = []
 		keynames = set()
-		line_count = 0
-		e_check = 0
 		# Actually building the dictionary
 		for entry in data:
                         # Focus only on E records
@@ -213,6 +213,14 @@ def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 				fields = entry.split(";")
 				message = ' '.join(fields[3:])
 				rec = parse_acct_record(message)
+				v = rec['resources_used.walltime'].split(":")
+				used_time = timedelta(hours=int(v[0]), minutes=int(v[1]), seconds=int(v[2])).total_seconds()
+				
+				v = rec['Resource_List.walltime'].split(":")
+				pred_time = timedelta(hours=int(v[0]), minutes=int(v[1]), seconds=int(v[2])).total_seconds()
+
+				v = rec['resources_used.cput'].split(":")
+				cput = timedelta(hours=int(v[0]), minutes=int(v[1]), seconds=int(v[2])).total_seconds()
 
 				# Ignore share queues
 				if (rec['queue'] == 'shareex' or rec['queue'] == 'share'):
@@ -227,9 +235,21 @@ def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 				elif (rec['run_count'] != '1'):
 					pass
 				
-				else:
+				# Ignore jobs that fail for PBS hardware issues
+				#elif (int(rec['Exit_status']) > 256):
+				#	pass
+					#print ("Happen exit")
 				
-				#if(True):
+				# Ignore jobs that takes less than 10 seconds to run (likely failing)/ users allocating 0.0 seconds or used cput is 0.0
+				# (fishy jobs)
+				#elif (used_time == 0.0 or pred_time == 0.0):
+				#	pass
+				#	print ("Happen cput, actual, run")
+				
+				# Remove jobs with the same starting and ending time
+				#elif (int(int(rec['end']) - int(rec['start'])) == 0):
+				#	pass
+				else:
 					updated_dict = {}
 					num_end_rec += 1
 					record_id = record_id + 1
@@ -256,7 +276,7 @@ def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 					for key in rec.keys():
 						# Resource-related time (in format of HH:MM:SS)
 						if ((key == 'resources_used.walltime') or (key == 'Resource_List.walltime')
-									or (key == 'resources_used.cput')):
+							or (key == 'resources_used.cput') or (key == 'Resource_List.cput') or (key == 'Resource_List.pcput')):
 							v = rec[key].split(":")
 							v = timedelta(hours=int(v[0]), minutes=int(v[1]),
 								seconds=int(v[2])).total_seconds()
@@ -264,9 +284,9 @@ def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 							keynames.add(key)
 
 						# Remove kb to make the field numeric for mem and vmem
-						elif ('mem' in key or  'vmem' in key):
+						elif ('mem' in key or  'vmem' in key or 'pmem' in key or 'pvmem' in key or 'file' in key):
 							if ('kb' in rec[key] or 'k' in rec[key]):
-								v = float(rec[key].replace('kb', '').replace('k','')) * 1000.0
+								v = float(rec[key].replace('kb', '').replace('k','')) * 1e3
 							elif ('gb' in rec[key] or 'g' in rec[key]):
 								v = float(rec[key].replace('gb', '').replace('g',''))* 1e9
 							elif ('mb' in rec[key] or 'm' in rec[key]):
@@ -303,7 +323,6 @@ def parsing_accounting_file(accounting_file, csv_output, statFileWriter):
 		print("Parsing Completed")
 		outputFile.close()
 		print ("Number of E records", file_name, num_end_rec)
-		print ("Unfiltered E recs ", line_count)
 		
 		#Final edit (fill in 0 for empty cells)
 		try:
