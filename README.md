@@ -1,6 +1,12 @@
 # PBS Scheduler Optimization
 
-This repository implements data preprocessing, machine learning models to optimize PBS Scheduler (for NCAR Workload (private) and Benchmark Workload from http://www.cs.huji.ac.il/labs/parallel/workload/logs.html (public))
+This repository implements data preprocessing, machine learning models to optimize PBS Scheduler
+
+**NCAR Workload:** Cheynne April 2019 (M2, M3, M4) <br/>
+**Benchmark Workload** from http://www.cs.huji.ac.il/labs/parallel/workload/logs.html <br/>
+Cornell Theory Center IBM SP2 (CTC) <br/>
+Swedish Royal Institute of Technology IBM SP2 (KTH) <br/>
+San Diego Supercomputer CenterBlue Horizon (SDSC)
 
 
 # Requirements
@@ -161,7 +167,7 @@ python3 train_transfer.py --batch_size=32 --num_epochs=200 --hidden_size=128 --c
 
 
 # Acknowledgement
-https://github.com/chenchao666/JDDA-Master (Tensorflow)
+https://github.com/chenchao666/JDDA-Master (Tensorflow) </br>
 https://github.com/yunjey/pytorch-tutorial
 
 
