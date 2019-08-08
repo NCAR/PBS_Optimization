@@ -1,6 +1,6 @@
 # PBS Scheduler Optimization
 
-This repository implements data preprocessing, machine learning models to optimize PBS Scheduler
+This repository implements data preprocessing, machine learning models to optimize PBS Scheduler (for NCAR Workload (private) and Benchmark Workload from http://www.cs.huji.ac.il/labs/parallel/workload/logs.html (public))
 
 
 # Requirements
@@ -152,4 +152,16 @@ Implementation of the proposed domain adaptation model from *"Learning Transfera
 python3 train_transfer.py --batch_size=32 --num_epochs=200 --hidden_size=128 --ckpt=False --train_path='../training_small/' --ckpt_path='../best_dan_model/' --test_path='../testing_small/' --model_type='dan' --dropout=0.8 --device='cuda:0'
 ```
 ```
+
+# Domain Adaptation with Correlation Alignment (DCORAL)
+Implementation based on the proposed model from "Joint Domain Alignment and Discriminative Feature Learning for Unsupervised Deep Domain Adaptation) (Chen et al., 2018)
+
+python3 train_transfer.py --batch_size=32 --num_epochs=200 --hidden_size=128 --ckpt=False --train_path='../training_small/' --ckpt_path='../best_dan_model/' --test_path='../testing_small/' --model_type='dan' --dropout=0.8 --device='cuda:0' --old =True
+```
+
+
+# Acknowledgement
+https://github.com/chenchao666/JDDA-Master (Tensorflow)
+https://github.com/yunjey/pytorch-tutorial
+
 
