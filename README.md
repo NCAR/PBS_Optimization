@@ -176,6 +176,18 @@ python3 train_transfer.py --batch_size=32 --num_epochs=200 --hidden_size=128 --c
 |M3-->M4  | 0.849 | 0.377 | 0.772 | **0.882** | 0.129 | 0.698 |
 |M4-->M3  | 0.747 | 0.277 | 0.835 | **0.873** | 0.505 | 0.735 |
 |**Average** | 0.515 | 0.228 | 0.532 | 0.551 | 0.317 | **0.576** |
+
+## Benchmark Workload
+|Methods | RF | XGBoost | FC | Bi-LSTM | CNN | DCORAL |
+|---|---|---|---|---|---|---|
+|CTC-->KTH | 0.254 | 0.089 | 0.191 | 0.245 | 0.193 | **0.385** |
+|KTH-->CTC | 0.462 | 0.118 | **0.528** | 0.303 | 0.276 | 0.426 |
+|CTC-->SDSC | **0.292** | 0.058 | 0.092 | 0.161 | 0.143 | 0.241 |
+|SDSC-->CTC | 0.256 | **0.611** | 0.204 | 0.210 | 0.285 | 0.395 |
+|KTH-->SDSC  | 0.563 | 0.273 | 0.695 | **0.886** | 0.287 | 0.384 |
+|SDSC-->KTH  | 0.614 | 0.159 | 0.749 | **0.799** | 0.212 | 0.511 |
+|**Average** | 0.407 | 0.218 | 0.410| **0.434** | 0.233 | 0.390 |
+
 # Acknowledgement
 https://github.com/chenchao666/JDDA-Master (Tensorflow) </br>
 https://github.com/yunjey/pytorch-tutorial
