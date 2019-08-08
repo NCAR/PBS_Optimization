@@ -18,19 +18,9 @@ import argparse
 # Argument:
 ##  Model name as either 'cnn'/'rnn'/'ff'
 
-#training_loc = '../training_data/'
-#testing_loc = '../testing_data/'
-#report = '../' + argv[1] + '_report/'
-#ckpt_dir = './best_' + argv[1] + '_model/'
 a = Random()
 a.seed(1)
 
-#-------Hyperparameter of network------------#
-#num_epochs = 200
-output_size = 6
-#batch_size = 10
-#learning_rate = 0.001
-#hidden_size = 256
 
 criterion = nn.CrossEntropyLoss()
 
@@ -39,17 +29,20 @@ def parse_argument():
 	parser.add_argument('--batch_size', type=int, default=32)
 	parser.add_argument('--num_epochs', type=int, default=100)
 	parser.add_argument('--hidden_size', type=int, default=128)
+	parser.add_argument("--pretrain", type=bool, default=False)
 	parser.add_argument("--ckpt", type=bool, default=False)
 	parser.add_argument("--ckpt_path", type = str, default ='ckpt')
 	parser.add_argument('--train_path', type = str, default='train')
 	parser.add_argument('--test_path', type = str, default = 'test')
-	parser.add_argument('--learning_rate', type= float, default = 1e-3)
-	parser.add_argument('--report_path', type=str, default='report')
+	parser.add_argument('--learning_rate', type= float, default = 1e-5)
+	parser.add_argument('--report_path', type=str, default='../report/')
 	parser.add_argument('--model_type', type=str, default='ff')
 	parser.add_argument('--dropout', type=float, default=1.0)
 	parser.add_argument('--device', type=str, default='cpu')
-	parser.add_argument('--num_layers',type=int, default=2)
-	parser.add_argument('-num_classes', type=int, default=6)	
+	parser.add_argument('--num_layers',type=int, default=2)	
+	parser.add_argument('--num_classes', type=int, default=6)
+	parser.add_argument('--old', type=bool, default=False)
+	parser.add_argument('--binary',type=bool, default=False)
 	args = parser.parse_args()
 	config = args.__dict__
 	return config
@@ -81,20 +74,26 @@ def handle_non_numerical_data(df):
             df[column] = list(map(convert_to_int, df[column]))
     return df
 
-def create_label(input_val,labels):
+def create_label(input_val,labels, binary=False):
         for i in range (input_val.shape[0]):
-                if (input_val[i] < 0.0):
-                        labels.append(0)
-                elif (input_val[i] >= 0.0 and input_val[i] < 0.25):
-                        labels.append(1)
-                elif (input_val[i] >=0.25 and input_val[i] <1.0):
-                        labels.append(2)
-                elif (input_val[i] >=1.0 and input_val[i] <3.0):
-                        labels.append(3)
-                elif (input_val[i] >=3.0 and input_val[i] <7.0):
-                        labels.append(4)
-                elif (input_val[i] >= 7.0):
-                        labels.append(5)
+               if (binary == True):
+                       if (input_val[i] < 0.0):
+                           labels.append(0)
+                       else:
+                           labels.append(1)
+               else:
+                       if (input_val[i] < 0.0):
+                           labels.append(0)
+                       elif (input_val[i] >= 0.0 and input_val[i] < 0.25):
+                           labels.append(1)
+                       elif (input_val[i] >=0.25 and input_val[i] <1.0):
+                           labels.append(2)
+                       elif (input_val[i] >=1.0 and input_val[i] <3.0):
+                           labels.append(3)
+                       elif (input_val[i] >=3.0 and input_val[i] <7.0):
+                           labels.append(4)
+                       elif (input_val[i] >= 7.0):
+                           labels.append(5)
         return labels
 
 def calculate_resources(x, df):
@@ -105,19 +104,23 @@ def calculate_resources(x, df):
         return resources
 
 
-def load_data(curFile):
+def load_data(curFile,config):
         y = []
         df = pd.DataFrame()
         for chunk in pd.read_csv(curFile, chunksize=200000, engine='python'):
-                        df = pd.concat([df, chunk])
-
+             df = pd.concat([df, chunk])
+        if (config['old'] == True):
+             mispred = np.array(df['requested_time'] - df['run_time']) / 3600.0
+             y = create_label(mispred.reshape(-1,1),y,config['binary'])
+             df = df.drop(['JobID'], axis=1)
+        else:
                 # Create labels
-        mispred = np.array(df['Resource_List.walltime'] - df['resources_used.walltime'])/ 3600.0
-        y = create_label(mispred.reshape(-1,1),y)
+             mispred = np.array(df['Resource_List.walltime'] - df['resources_used.walltime'])/ 3600.0
+             y = create_label(mispred.reshape(-1,1),y, config['binary'])
                 #print ("Misprediction", mispred)
 
-        df = df[df.columns.drop(list(df.filter(regex='resources_used')))]
-        df = df.drop(['start', 'ID', \
+             df = df[df.columns.drop(list(df.filter(regex='resources_used')))]
+             df = df.drop(['start', 'ID', \
                 'Exit_status','qtime','end','entity',\
                 'rtime', 'exec_vnode', 'exec_host', 'etime', 'ctime', \
                 'session', 'start' ], axis=1)
@@ -132,6 +135,8 @@ def load_data(curFile):
         resources = calculate_resources(X, final_df)
         return X, y, resources
 
+
+
 def generate_batch(n, batch_size):
         batch_index = a.sample(range(n), batch_size)
         return batch_index
@@ -144,7 +149,7 @@ def train_model(x_t, y_t, res_t, x_eval, y_eval, res_eval, model, optimizer, con
     epoch_no_improve = 0
     n_epoch_stop = 3
     batch_num = int(x_t.shape[0] / config['batch_size'])
-
+    print ("Train model")
     for epoch in range(config['num_epochs']):
         # Start training process
         for batch in range(batch_num):
@@ -154,7 +159,7 @@ def train_model(x_t, y_t, res_t, x_eval, y_eval, res_eval, model, optimizer, con
             batch_y = y_t[batch_index]
             batch_res = res_t[batch_index]
             if (config['model_type'] == 'cnn' or config['model_type'] == 'resnet'):
-                batch_x = batch_x.reshape(-1, 1, 1, batch_x.shape[1])
+                batch_x = batch_x.reshape(-1, 1, batch_x.shape[1])
             elif (config['model_type'] == 'rnn'):
                 batch_x = batch_x.reshape(-1, 1, batch_x.shape[1])
            
@@ -182,14 +187,14 @@ def train_model(x_t, y_t, res_t, x_eval, y_eval, res_eval, model, optimizer, con
             counter += 1
         print("------epoch : ", epoch, " Loss: ", loss.item(), " Training F1:", round((f1_total / batch_num), 4))
         model.eval()
-        eval_f1 = evaluate_test(x_eval, y_eval, res_eval, model,config, False)
-        f1_total += eval_f1
-        if (eval_f1 >= best_f1):
-            best_f1 = eval_f1
-            torch.save(model.state_dict(), config['ckpt_path'] + 'best_model.pth')
+        eval_acc = evaluate_test(x_eval, y_eval, res_eval, model,config, False)
+        #f1_total += eval_f1
+        if (eval_acc >= best_f1):
+            best_f1 = eval_acc
+            torch.save(model.state_dict(), config['ckpt_path'] + 'best_model_' + config['model_type'] + '.pth')
 
-        print("Current F1 score (evaluation) ", eval_f1)
-        print("Best F1 score (evaluation) ", best_f1)
+        print("Current acc (evaluation) ", eval_acc)
+        print("Best acc (evaluation) ", best_f1)
     print("Training is completed")
 
 
@@ -207,7 +212,7 @@ def evaluate_test(x_eval, y_eval, res_eval, model, config,test=False):
             batch_test_res = res_eval[begin_index: end_index]
 
             if (config['model_type'] == 'cnn' or config['model_type'] == 'resnet'):
-                batch_test_x = batch_test_x.reshape(-1, 1, 1, batch_test_x.shape[1])
+                batch_test_x = batch_test_x.reshape(-1, 1, batch_test_x.shape[1])
             elif (config['model_type'] == 'rnn'):
                 batch_test_x = batch_test_x.reshape(-1, 1, batch_test_x.shape[1])
             
@@ -224,28 +229,27 @@ def evaluate_test(x_eval, y_eval, res_eval, model, config,test=False):
         acc = accuracy_score(total_y_test, total_pred)
         print("Testing accuracy", acc)
     _, _, f1, _ = prfs(total_y_test, total_pred, average='weighted')
-
-    return f1
+    acc = accuracy_score(total_y_test, total_pred)
+    return acc
 
 def main():
     config = parse_argument()
     print ("Config", config)
     training_files = glob.glob(config['train_path'] + '*')
     testing_files = glob.glob(config['test_path'] + '*')
-    #device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
-    #print("Available device", device)
 
     MakeDirectory(config['report_path'])
     df = pd.DataFrame()
     df['Test (down)/ Train (across)'] = np.array([l.split('/')[-1].split('.')[0] for l in testing_files])
+    #MakeDirectory(config['ckpt_path'])
 
     for train_file in training_files:
         print("Training file", train_file)
         MakeDirectory(config['ckpt_path'])
 
-        x_train, y_train, train_resources = load_data(train_file)
+        x_train, y_train, train_resources = load_data(train_file, config)
         indices = np.arange(x_train.shape[0])
-        x_t, x_eval, y_t, y_eval, idx_t, idx_te = train_test_split(x_train, y_train, indices, test_size=0.2,
+        x_t, x_eval, y_t, y_eval, idx_t, idx_te = train_test_split(x_train, y_train, indices, test_size=0.5,
                                                                    random_state=0)
         res_t = train_resources[idx_t]
         res_eval = train_resources[idx_te]
@@ -254,51 +258,53 @@ def main():
         print ("--- Initializing variables --- ")
         if (config['model_type'] == 'cnn'):
             training_model = model.ConvNet(config).to(config['device'])
-            optimizer = torch.optim.Adam(training_model.parameters(), lr = config['learning_rate'])
-            train_model(x_t, y_t, res_t, x_eval, y_eval, res_eval, training_model, optimizer, config)
 
         elif (config['model_type'] == 'rnn'):
             training_model = model.RNN(input_size, config).to(config['device'])
-            optimizer = torch.optim.Adam(training_model.parameters(), lr = config['learning_rate'])
-            train_model(x_t, y_t, res_t, x_eval, y_eval, res_eval, training_model, optimizer, config)
             
         elif (config['model_type'] == 'ff'):
             training_model = model.NeuralNet(input_size,config).to(config['device'])
-            optimizer = torch.optim.Adam(training_model.parameters(), lr = config['learning_rate'])
-            train_model(x_t, y_t, res_t, x_eval, y_eval, res_eval, training_model, optimizer, config)
  
         elif( config['model_type'] == 'resnet'):
             training_model = model.ResNet(model.ResidualBlock, [2,2,2], config).to(config['device'])
-            optimizer = torch.optim.Adam(training_model.parameters(), lr = config['learning_rate'])
-            train_model(x_t, y_t, res_t, x_eval, y_eval, res_eval, training_model, optimizer, config)
- 
-         
-    #i print ("Overall testing/evaluation F1 is ", f1)
-        test_results = []
-        print ("-------------- Starting testing -------------------------")
-        for test_file in testing_files:
-            x_test, y_test, test_resources = load_data(test_file)
-            #print("--------- Starting testing ---------")
-            print("Testing file", test_file)
+        
+        if (config['ckpt'] == True):
+            training_model.load_state_dict(torch.load(config['ckpt_path'] + 'best_model_' + config['model_type'] +'.pth'))
+        
+        optimizer = torch.optim.Adam(training_model.parameters(), lr = config['learning_rate'])
+        train_model(x_t, y_t, res_t, x_eval, y_eval, res_eval, training_model, optimizer, config)
 
-            training_model.load_state_dict(torch.load(config['ckpt_path'] + 'best_model.pth'))
-            test_f1 = evaluate_test(x_test, y_test, test_resources, training_model, config, True)
-            test_results.append(test_f1)
-            print("Testing F1 score", test_f1)
-            print("-------------------------------")
+        if (config['pretrain'] == False): 
+            test_results = []
+            print ("-------------- Starting testing -------------------------")
+            for test_file in testing_files:
+                  x_test, y_test, test_resources = load_data(test_file,config)
+                  print("Testing file", test_file)
 
-        print("Testing is completed")
-        shutil.rmtree(config['ckpt_path'])
-        print("Current best model directory is removed")
+                  training_model.load_state_dict(torch.load(config['ckpt_path'] + 'best_model_' + config['model_type'] +'.pth'))
+                  test_f1 = evaluate_test(x_test, y_test, test_resources, training_model, config, True)
+                  test_results.append(test_f1)
+                  print("Testing F1 score", test_f1)
+                  print("-------------------------------")
+
+            print("Testing is completed")
+            
+            shutil.rmtree(config['ckpt_path'])
+            print("Current best model directory is removed")
              
-        df[train_file.split('/')[-1].split('.')[0]] = test_results    
-
-    output_report = config['report_path'] + config['model_type'] + '_report'
-    for name in config.keys():
-          if (name != 'model_type' and not 'path'in name):
-                output_report += '_' + str(name) + str(config[name])
+            df[train_file.split('/')[-1].split('.')[0]] = test_results    
     
-    df.to_csv(output_report + '.csv', index=False)
+    if (config['pretrain'] == False):
+        output_report = config['report_path'] + config['model_type'] + '_report'
+        for name in config.keys():
+            if (name != 'model_type'):
+                  if ('train_path' in name or 'test_path' in name):
+                       output_report += '_'+  str(name) + str(config[name].split('/')[-2])
+                  elif ('ckpt_path' in name or 'report_path' in name or 'device' in name):
+                       pass
+                  else:
+                       output_report += '_' + str(name) + str(config[name])
+        df.to_csv(output_report + '.csv', index=False)
 
 if __name__ == "__main__":
       main()

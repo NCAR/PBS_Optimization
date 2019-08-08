@@ -122,10 +122,10 @@ Argument parameters: <br/>
 	user <br />
 	account <br />
 # Training State-of-the-art Model (Neural Network)
-To train either FeedForward Network (keyword: ff), Recurrent Neural Network (keyword: rnn), Convolutional Neural Network (keyword: cnn), or Residual Neural Network (keyword: resnet), please follow the example below. Example is for FeedForward network:
+To train either FeedForward Network (keyword: ff), Bi-directionalr Long short-term Memory Network (Bi-LSTM) (keyword: rnn), Convolutional Neural Network (keyword: cnn), or Residual Neural Network (keyword: resnet), please follow the example below. Example is for FeedForward network:
 
 ```
-python3 train.py --batch_size=32 --num_epochs=200 --hidden_size=128 --ckpt=False --train_path='../training_small/' --ckpt_path='../best_ff_model/' --test_path='../testing_small/' --model_type='ff' --dropout=0.8 --device='cuda:0'
+python3 train.py --batch_size=64 --num_epochs=100 --hidden_size=128 --ckpt=False --train_path='../training_small/' --ckpt_path='../best_ff_model/' --test_path='../testing_small/' --model_type='ff' --dropout=0.8 --device='cuda:0' --old=True
 ```
 # Training State-of-the-art Model (Random Forest, XGBoost)
 Training default model proposed by *"Machine Learning Predictions for Underestimation of Job Runtime on HPC System" (Guo, Nomura, Barton, Zhang, and Matsuoka, 2018)*
